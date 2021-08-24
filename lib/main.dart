@@ -27,6 +27,7 @@ import 'package:rtchat/screens/home.dart';
 import 'package:rtchat/screens/settings/activity_feed.dart';
 import 'package:rtchat/screens/settings/audio_sources.dart';
 import 'package:rtchat/screens/settings/backup.dart';
+import 'package:rtchat/screens/name_card.dart';
 import 'package:rtchat/screens/settings/quick_links.dart';
 import 'package:rtchat/screens/settings/settings.dart';
 import 'package:rtchat/screens/settings/twitch/badges.dart';
@@ -229,6 +230,7 @@ class App extends StatelessWidget {
                 return const HomeScreen();
               });
             },
+            '/name-card': (context) => const NameCardScreen(),
             '/settings': (context) => const SettingsScreen(),
             '/settings/badges': (context) => const TwitchBadgesScreen(),
             '/settings/activity-feed': (context) => const ActivityFeedScreen(),

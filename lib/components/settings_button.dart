@@ -6,7 +6,7 @@ import 'package:rtchat/models/layout.dart';
 import 'package:rtchat/models/tts.dart';
 import 'package:rtchat/models/user.dart';
 
-enum _Value { layout, refreshAudio, settings, signOut }
+enum _Value { layout, refreshAudio, nameCard, settings, signOut }
 
 class SettingsButtonWidget extends StatelessWidget {
   const SettingsButtonWidget({Key? key}) : super(key: key);
@@ -16,6 +16,9 @@ class SettingsButtonWidget extends StatelessWidget {
     return PopupMenuButton<_Value>(
       onSelected: (value) async {
         switch (value) {
+          case _Value.nameCard:
+            await Navigator.pushNamed(context, "/name-card");
+            break;
           case _Value.settings:
             await Navigator.pushNamed(context, "/settings");
             break;
@@ -83,6 +86,7 @@ class SettingsButtonWidget extends StatelessWidget {
           ),
           const PopupMenuItem(
               value: _Value.refreshAudio, child: Text("Refresh Audio Sources")),
+          const PopupMenuItem(value: _Value.nameCard, child: Text("Name Card")),
           const PopupMenuItem(value: _Value.settings, child: Text("Settings")),
           const PopupMenuItem(value: _Value.signOut, child: Text("Sign Out")),
         ];
