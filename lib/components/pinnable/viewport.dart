@@ -1,6 +1,5 @@
 import 'dart:math' as math;
 
-import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:rtchat/components/chat_history/sliver.dart';
@@ -31,8 +30,8 @@ class PinnableMessageViewport extends Viewport {
         );
 
   @override
-  _RenderPinnableMessageViewport createRenderObject(BuildContext context) {
-    return _RenderPinnableMessageViewport(
+  RenderPinnableMessageViewport createRenderObject(BuildContext context) {
+    return RenderPinnableMessageViewport(
       axisDirection: axisDirection,
       crossAxisDirection: crossAxisDirection ??
           Viewport.getDefaultCrossAxisDirection(context, axisDirection),
@@ -46,7 +45,7 @@ class PinnableMessageViewport extends Viewport {
 
   @override
   void updateRenderObject(
-      BuildContext context, _RenderPinnableMessageViewport renderObject) {
+      BuildContext context, RenderPinnableMessageViewport renderObject) {
     renderObject
       ..axisDirection = axisDirection
       ..crossAxisDirection = crossAxisDirection ??
@@ -59,10 +58,10 @@ class PinnableMessageViewport extends Viewport {
   }
 }
 
-class _RenderPinnableMessageViewport extends RenderViewport {
+class RenderPinnableMessageViewport extends RenderViewport {
   double cumulativeOffset = 0.0;
 
-  _RenderPinnableMessageViewport({
+  RenderPinnableMessageViewport({
     AxisDirection axisDirection = AxisDirection.down,
     required AxisDirection crossAxisDirection,
     required ViewportOffset offset,

@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/widgets.dart';
 import 'package:rtchat/components/chat_history/sliver.dart';
 import 'package:rtchat/components/pinnable/viewport.dart';
+
+enum PinState {
+  notPinnable,
+  pinned,
+  unpinned,
+}
 
 /// This is a total hack of a scrollview. Instead of the standard one-pass
 /// render that [ScrollView] provides, this class instead performs a second
@@ -10,8 +15,9 @@ import 'package:rtchat/components/pinnable/viewport.dart';
 /// correct location if they're pinned.
 class PinnableMessageScrollView extends ScrollView {
   final TickerProvider vsync;
-  final bool? Function(int) isPinnedBuilder;
+  final PinState Function(int) isPinnedBuilder;
   final Widget Function(int) itemBuilder;
+  final ChildIndexGetter findChildIndexCallback;
   final int count;
 
   const PinnableMessageScrollView({
@@ -20,6 +26,7 @@ class PinnableMessageScrollView extends ScrollView {
     required this.vsync,
     required this.isPinnedBuilder,
     required this.itemBuilder,
+    required this.findChildIndexCallback,
     required this.count,
   }) : super(
           key: key,
@@ -38,28 +45,40 @@ class PinnableMessageScrollView extends ScrollView {
     for (var start = 0; start < count;) {
       final nextPinnableIndex =
           Iterable.generate(count - start, (value) => value + start).firstWhere(
-              (index) => isPinnedBuilder(index) != null,
+              (index) => isPinnedBuilder(index) != PinState.notPinnable,
               orElse: () => count);
       final intermediateCount = nextPinnableIndex - start;
+      // key from the distance to the end of the list, which is the most stable identifier.
       if (intermediateCount > 0) {
         final offset = start;
         final sliver = SliverList(
-            delegate: SliverChildBuilderDelegate(
-                (context, index) => itemBuilder(index + offset),
-                childCount: intermediateCount));
+          key: ValueKey(count - nextPinnableIndex + 1),
+          delegate: SliverChildBuilderDelegate(
+            (context, index) => itemBuilder(index + offset),
+            findChildIndexCallback: (key) {
+              final index = findChildIndexCallback(key);
+              return index == null || index == -1 ? null : index - offset;
+            },
+            childCount: intermediateCount,
+            semanticIndexOffset: offset,
+          ),
+        );
         slivers.add(sliver);
       }
       if (nextPinnableIndex == count) {
         break;
       }
-      final pinned = isPinnedBuilder(nextPinnableIndex)!;
+      final pinned = isPinnedBuilder(nextPinnableIndex);
       final sliver = PinnableMessageSliver(
+        key: ValueKey(count - nextPinnableIndex),
         vsync: vsync,
-        pinned: pinned,
+        pinned: pinned == PinState.pinned,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOut,
-          color: pinned ? pinnedSliverColor : Colors.transparent,
+          color: pinned == PinState.pinned
+              ? pinnedSliverColor
+              : Colors.transparent,
           child: itemBuilder(nextPinnableIndex),
         ),
       );

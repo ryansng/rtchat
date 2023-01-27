@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:rtchat/models/messages/twitch/raiding_event.dart';
 
 class FollowEventConfig {
   bool showEvent;
@@ -55,10 +56,30 @@ class CheerEventConfig {
 class RaidEventConfig {
   bool showEvent;
   Duration eventDuration;
+  bool enableShoutoutButton;
 
-  RaidEventConfig(this.showEvent, this.eventDuration);
+  RaidEventConfig(
+      this.showEvent, this.eventDuration, this.enableShoutoutButton);
 
   RaidEventConfig.fromJson(Map<String, dynamic> json)
+      : showEvent = json['showEvent'],
+        eventDuration = Duration(seconds: json['eventDuration'].toInt()),
+        enableShoutoutButton = json['enableShoutoutButton'] ?? false;
+
+  Map<String, dynamic> toJson() => {
+        "showEvent": showEvent,
+        "eventDuration": eventDuration.inSeconds.toInt(),
+        "enableShoutoutButton": enableShoutoutButton,
+      };
+}
+
+class HostEventConfig {
+  bool showEvent;
+  Duration eventDuration;
+
+  HostEventConfig(this.showEvent, this.eventDuration);
+
+  HostEventConfig.fromJson(Map<String, dynamic> json)
       : showEvent = json['showEvent'],
         eventDuration = Duration(seconds: json['eventDuration'].toInt());
 
@@ -99,6 +120,11 @@ class PollEventConfig {
   PollEventConfig.fromJson(Map<String, dynamic> json)
       : showEvent = json['showEvent'],
         eventDuration = Duration(seconds: json['eventDuration'].toInt());
+
+  Map<String, dynamic> toJson() => {
+        "showEvent": showEvent,
+        "eventDuration": eventDuration.inSeconds.toInt(),
+      };
 }
 
 class HypetrainEventConfig {
@@ -135,13 +161,15 @@ class PredictionEventConfig {
 
 class EventSubConfigurationModel extends ChangeNotifier {
   FollowEventConfig followEventConfig =
-      FollowEventConfig(false, const Duration(seconds: 2));
+      FollowEventConfig(true, const Duration(seconds: 2));
   SubscriptionEventConfig subscriptionEventConfig =
-      SubscriptionEventConfig(false, false, const Duration(seconds: 6));
+      SubscriptionEventConfig(true, false, const Duration(seconds: 6));
   CheerEventConfig cheerEventConfig =
       CheerEventConfig(true, const Duration(seconds: 6));
   RaidEventConfig raidEventConfig =
-      RaidEventConfig(true, const Duration(seconds: 6));
+      RaidEventConfig(true, const Duration(seconds: 6), false);
+  HostEventConfig hostEventConfig =
+      HostEventConfig(true, const Duration(seconds: 6));
   ChannelPointRedemptionEventConfig channelPointRedemptionEventConfig =
       ChannelPointRedemptionEventConfig(
           true, const Duration(seconds: 6), const Duration(seconds: 0));
@@ -151,6 +179,9 @@ class EventSubConfigurationModel extends ChangeNotifier {
       HypetrainEventConfig(true, const Duration(seconds: 6));
   PredictionEventConfig predictionEventConfig =
       PredictionEventConfig(true, const Duration(seconds: 6));
+  RaidingEventConfig
+      raidingEventConfig = // 90 seconds for raid + 10 for join prompt.
+      RaidingEventConfig(true, const Duration(seconds: 100));
   // other configs
   // final HypeTrainEventConfig;
 
@@ -199,6 +230,11 @@ class EventSubConfigurationModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  setRaidEventEnableShoutoutButton(bool value) {
+    raidEventConfig.enableShoutoutButton = value;
+    notifyListeners();
+  }
+
   setChannelPointRedemptionEventDuration(Duration value) {
     channelPointRedemptionEventConfig.eventDuration = value;
     notifyListeners();
@@ -224,6 +260,16 @@ class EventSubConfigurationModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  setHostEventDuration(Duration duration) {
+    hostEventConfig.eventDuration = duration;
+    notifyListeners();
+  }
+
+  setHostEventShowable(bool value) {
+    hostEventConfig.showEvent = value;
+    notifyListeners();
+  }
+
   setHypetrainEventDuration(Duration duration) {
     hypetrainEventConfig.eventDuration = duration;
     notifyListeners();
@@ -244,6 +290,16 @@ class EventSubConfigurationModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  setRaidingEventDuration(Duration duration) {
+    raidingEventConfig.eventDuration = duration;
+    notifyListeners();
+  }
+
+  setRaidingEventShowable(bool value) {
+    raidingEventConfig.showEvent = value;
+    notifyListeners();
+  }
+
   EventSubConfigurationModel.fromJson(Map<String, dynamic> json) {
     if (json['followEventConfig'] != null) {
       followEventConfig = FollowEventConfig.fromJson(json['followEventConfig']);
@@ -257,6 +313,9 @@ class EventSubConfigurationModel extends ChangeNotifier {
     }
     if (json['raidEventConfig'] != null) {
       raidEventConfig = RaidEventConfig.fromJson(json['raidEventConfig']);
+    }
+    if (json['hostEventConfig'] != null) {
+      hostEventConfig = HostEventConfig.fromJson(json['hostEventConfig']);
     }
     if (json['channelPointRedemptionEventConfig'] != null) {
       channelPointRedemptionEventConfig =
@@ -274,16 +333,23 @@ class EventSubConfigurationModel extends ChangeNotifier {
       predictionEventConfig =
           PredictionEventConfig.fromJson(json['predictionEventConfig']);
     }
+    if (json['raidingEventConfig'] != null) {
+      raidingEventConfig =
+          RaidingEventConfig.fromJson(json['raidingEventConfig']);
+    }
   }
 
   Map<String, dynamic> toJson() => {
-        "followEventConfig": followEventConfig,
-        "subscriptionEventConfig": subscriptionEventConfig,
-        "cheerEventConfig": cheerEventConfig,
-        "raidEventConfig": raidEventConfig,
-        "pollEventConfig": pollEventConfig,
-        "channelPointsRedemptionEventConfig": channelPointRedemptionEventConfig,
-        "hypeTrainConfig": hypetrainEventConfig,
-        "predictionEventConfig": predictionEventConfig
+        "followEventConfig": followEventConfig.toJson(),
+        "subscriptionEventConfig": subscriptionEventConfig.toJson(),
+        "cheerEventConfig": cheerEventConfig.toJson(),
+        "raidEventConfig": raidEventConfig.toJson(),
+        "pollEventConfig": pollEventConfig.toJson(),
+        "channelPointRedemptionEventConfig":
+            channelPointRedemptionEventConfig.toJson(),
+        "hostEventConfig": hostEventConfig.toJson(),
+        "hypetrainEventConfig": hypetrainEventConfig.toJson(),
+        "predictionEventConfig": predictionEventConfig.toJson(),
+        "raidingEventConfig": raidingEventConfig.toJson(),
       };
 }

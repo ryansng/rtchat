@@ -9,8 +9,38 @@ service cloud.firestore {
       allow read: if request.auth != null && request.auth.uid == userId;
       allow write: if false;
     }
+    match /streamlabs/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false;
+    }
+    match /realtimecash/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false;
+    }
+    match /actions/{document=**} {
+      allow read: if false;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow update: if false;
+    }
     match /messages/{document=**} {
       allow read: if true;
+      allow write: if false;
+    }
+    match /channels/{document=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /channels/{channelId}/messages/{document=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /chat-status/{document=**} {
+      allow list: if request.query.limit == 1;
+      allow get: if true;
+      allow write: if false;
+    }
+    match /metadata/{document=**} {
+      allow read: if resource.data.lastActiveAt.toMillis() >= request.time.toMillis() - 7 * 86400 * 1000;
       allow write: if false;
     }
   }

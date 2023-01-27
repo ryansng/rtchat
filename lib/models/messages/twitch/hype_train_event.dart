@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:rtchat/models/messages/message.dart';
 
 class TwitchHypeTrainEventModel extends MessageModel {
@@ -79,6 +78,6 @@ class TwitchHypeTrainEventModel extends MessageModel {
       other.hasEnded == hasEnded;
 
   @override
-  int get hashCode =>
-      hashValues(level, progress, goal.hashCode, total, isSuccessful, hasEnded);
+  int get hashCode => Object.hash(
+      level, progress, goal.hashCode, total, isSuccessful, hasEnded);
 }

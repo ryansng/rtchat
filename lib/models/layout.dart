@@ -1,6 +1,6 @@
 import 'dart:core';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 enum PreferredOrientation {
@@ -34,13 +34,41 @@ extension _OrientationPreferenceJson on PreferredOrientation {
   }
 }
 
+extension _ThemeModeJson on ThemeMode {
+  int toJson() {
+    switch (this) {
+      case ThemeMode.light:
+        return 0;
+      case ThemeMode.dark:
+        return 1;
+      case ThemeMode.system:
+        return 2;
+    }
+  }
+
+  static ThemeMode fromJson(dynamic json) {
+    switch (json) {
+      case 0:
+        return ThemeMode.light;
+      case 1:
+        return ThemeMode.dark;
+      case 2:
+        return ThemeMode.system;
+    }
+    return ThemeMode.system;
+  }
+}
+
 class LayoutModel extends ChangeNotifier {
   double _panelHeight = 300.0;
   double _panelWidth = 300.0;
   bool _isStatsVisible = true;
-  bool _isInteractionLockable = false;
   bool _locked = false;
+  double _onDragStartHeight = 300.0;
   PreferredOrientation _orientationPreference = PreferredOrientation.system;
+  bool _isShowNotifications = false;
+  bool _isShowPreview = false;
+  ThemeMode _themeMode = ThemeMode.system;
 
   void updatePanelHeight({required double dy}) {
     _panelHeight += dy;
@@ -52,9 +80,26 @@ class LayoutModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  set panelHeight(double panelHeight) {
+    _panelHeight = panelHeight;
+    notifyListeners();
+  }
+
   double get panelHeight => _panelHeight;
 
   double get panelWidth => _panelWidth;
+
+  set panelWidth(double panelWidth) {
+    _panelWidth = panelWidth;
+    notifyListeners();
+  }
+
+  double get onDragStartHeight => _onDragStartHeight;
+
+  set onDragStartHeight(double onDragStartHeight) {
+    _onDragStartHeight = onDragStartHeight;
+    notifyListeners();
+  }
 
   bool get locked => _locked;
 
@@ -70,18 +115,34 @@ class LayoutModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  bool get isInteractionLockable => _isInteractionLockable;
-
-  set isInteractionLockable(bool value) {
-    _isInteractionLockable = value;
-    notifyListeners();
-  }
-
   PreferredOrientation get preferredOrientation => _orientationPreference;
 
   set preferredOrientation(PreferredOrientation value) {
     _orientationPreference = value;
     _bindOrientationPreference();
+    notifyListeners();
+  }
+
+  ThemeMode get themeMode => _themeMode;
+
+  set themeMode(ThemeMode value) {
+    _themeMode = value;
+    notifyListeners();
+  }
+
+  bool get isShowNotifications => _isShowNotifications;
+
+  set isShowNotifications(bool value) {
+    _isShowPreview = false;
+    _isShowNotifications = value;
+    notifyListeners();
+  }
+
+  bool get isShowPreview => _isShowPreview;
+
+  set isShowPreview(bool value) {
+    _isShowNotifications = false;
+    _isShowPreview = value;
     notifyListeners();
   }
 
@@ -118,13 +179,19 @@ class LayoutModel extends ChangeNotifier {
     if (json['isStatsVisible'] != null) {
       _isStatsVisible = json['isStatsVisible'];
     }
-    if (json['isInputLockable'] != null) {
-      _isInteractionLockable = json['isInputLockable'];
-    }
     if (json['orientationPreference'] != null) {
       _orientationPreference =
           _OrientationPreferenceJson.fromJson(json['orientationPreference']);
       _bindOrientationPreference();
+    }
+    if (json['isShowNotifications'] != null) {
+      _isShowNotifications = json['isShowNotifications'];
+    }
+    if (json['isShowPreview'] != null) {
+      _isShowPreview = json['isShowPreview'];
+    }
+    if (json['themeMode'] != null) {
+      _themeMode = _ThemeModeJson.fromJson(json['themeMode']);
     }
   }
 
@@ -133,7 +200,9 @@ class LayoutModel extends ChangeNotifier {
         "panelWidth": _panelWidth,
         "locked": _locked,
         "isStatsVisible": _isStatsVisible,
-        "isInputLockable": _isInteractionLockable,
         "orientationPreference": _orientationPreference.toJson(),
+        "isShowNotifications": _isShowNotifications,
+        "isShowPreview": _isShowPreview,
+        "themeMode": _themeMode.toJson(),
       };
 }

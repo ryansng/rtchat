@@ -1,13 +1,15 @@
 import * as crypto from "crypto";
 import * as admin from "firebase-admin";
 import * as functions from "firebase-functions";
-import fetch from "node-fetch";
+import fetch from "cross-fetch";
 import { ClientCredentials } from "simple-oauth2";
 import {
+  getAppAccessToken,
   TWITCH_CLIENT_ID,
   TWITCH_CLIENT_SECRET,
   TWITCH_OAUTH_CONFIG,
 } from "./oauth";
+import { runUpdateFollowerAndViewerCount } from "./chat-status";
 
 enum EventsubType {
   ChannelFollow = "channel.follow",
@@ -31,15 +33,30 @@ enum EventsubType {
   ChannelHypeTrainBegin = "channel.hype_train.begin",
   ChannelHypeTrainProgress = "channel.hype_train.progress",
   ChannelHypeTrainEnd = "channel.hype_train.end",
+  ChannelUpdate = "channel.update",
   StreamOnline = "stream.online",
   StreamOffline = "stream.offline",
+  ChannelShoutoutCreate = "channel.shoutout.create",
+  ChannelShoutoutReceive = "channel.shoutout.receive",
 }
 
 function createEventsub(token: string, type: string, twitchUserId: string) {
-  const condition =
-    type == "channel.raid"
-      ? { to_broadcaster_user_id: twitchUserId }
-      : { broadcaster_user_id: twitchUserId };
+  var condition: any = { broadcaster_user_id: twitchUserId };
+  if (type === "channel.raid") {
+    condition = { to_broadcaster_user_id: twitchUserId };
+  } else if (
+    type === "channel.shoutout.create" ||
+    type === "channel.shoutout.receive"
+  ) {
+    condition = {
+      broadcaster_user_id: twitchUserId,
+      moderator_user_id: twitchUserId,
+    };
+  }
+  const version =
+    type === "channel.shoutout.create" || type === "channel.shoutout.receive"
+      ? "beta"
+      : "1";
   return fetch("https://api.twitch.tv/helix/eventsub/subscriptions", {
     method: "POST",
     headers: {
@@ -49,7 +66,7 @@ function createEventsub(token: string, type: string, twitchUserId: string) {
     },
     body: JSON.stringify({
       type,
-      version: "1",
+      version: version,
       condition,
       transport: {
         method: "webhook",
@@ -105,11 +122,10 @@ export const eventsub = functions.https.onRequest(async (req, res) => {
     `sha256=${signature}`
   ) {
     console.error(new Error("failed to match signature"));
-    res.status(403).send();
-    return;
-  } else {
-    console.log("/eventsub", JSON.stringify(req.body));
+    // res.status(403).send();
+    // return;
   }
+  console.log("/eventsub", JSON.stringify(req.body));
 
   const status = req.body?.subscription?.status;
   if (status === "webhook_callback_verification_pending") {
@@ -119,24 +135,65 @@ export const eventsub = functions.https.onRequest(async (req, res) => {
   } else if (status === "enabled") {
     const type = req.body?.subscription?.type as EventsubType;
 
-    const messageRef = admin
-      .firestore()
-      .collection("messages")
-      .doc(`twitch:${messageId}`);
-
     const channelId = `twitch:${
       req.body.event["broadcaster_user_id"] ??
       req.body.event["to_broadcaster_user_id"]
     }`;
 
+    const channelRef = admin.firestore().collection("channels").doc(channelId);
+
+    const messageRef = channelRef
+      .collection("messages")
+      .doc(`twitch:${messageId}`);
+
     await messageRef.set({
       channelId,
       type,
-      timestamp: admin.firestore.Timestamp.fromMillis(
-        Date.parse(timestamp)
+      timestamp: admin.firestore.Timestamp.fromMillis(Date.parse(timestamp)),
+      expiresAt: admin.firestore.Timestamp.fromMillis(
+        Date.now() + 1000 * 86400 * 7 * 2
       ),
       event: req.body.event,
     });
+
+    switch (type) {
+      case EventsubType.StreamOnline:
+        await channelRef.set(
+          { onlineAt: admin.firestore.FieldValue.serverTimestamp() },
+          { merge: true }
+        );
+        // process twitch channel ids.
+        const token = await getAppAccessToken("twitch");
+        if (!token) {
+          throw new functions.https.HttpsError("internal", "auth error");
+        }
+        await runUpdateFollowerAndViewerCount(token, [channelId]);
+        break;
+      case EventsubType.StreamOffline:
+        await channelRef.set({ onlineAt: null }, { merge: true });
+        break;
+      case EventsubType.ChannelFollow:
+        // increment the follower count.
+        try {
+          await channelRef.update({
+            followerCount: admin.firestore.FieldValue.increment(1),
+          });
+        } catch {}
+        break;
+      case EventsubType.ChannelUpdate:
+        await channelRef.set(
+          {
+            login: req.body.event.broadcaster_user_login,
+            displayName: req.body.event.broadcaster_user_name,
+            title: req.body.event.title,
+            language: req.body.event.language,
+            categoryId: req.body.event.category_id,
+            categoryName: req.body.event.category_name,
+          },
+          { merge: true }
+        );
+        break;
+    }
   }
   res.status(200).send();
 });

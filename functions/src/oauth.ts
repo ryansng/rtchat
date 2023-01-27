@@ -25,6 +25,25 @@ export const TWITCH_OAUTH_CONFIG = {
   },
 } as ModuleOptions<"client_id">;
 
+export const STREAMLABS_CLIENT_ID = functions.config().streamlabs.id;
+export const STREAMLABS_CLIENT_SECRET = functions.config().streamlabs.secret;
+
+export const STREAMLABS_OAUTH_CONFIG = {
+  client: {
+    id: STREAMLABS_CLIENT_ID,
+    secret: STREAMLABS_CLIENT_SECRET,
+  },
+  auth: {
+    tokenHost: "https://www.streamlabs.com/api/v1.0",
+    tokenPath: "/api/v1.0/token",
+    authorizePath: "/api/v1.0/authorize",
+  },
+  options: {
+    bodyFormat: "json",
+    authorizationMethod: "body",
+  },
+} as ModuleOptions<"client_id">;
+
 export async function getAccessToken(userId: string, provider: string) {
   // fetch the token from the database.
   const ref = admin.firestore().collection("tokens").doc(userId);
@@ -37,19 +56,19 @@ export async function getAccessToken(userId: string, provider: string) {
   while (accessToken.expired(300)) {
     try {
       accessToken = await accessToken.refresh();
-    } catch (err) {
+    } catch (err: any) {
       if (err.data?.payload?.message === "Invalid refresh token") {
         await admin
           .firestore()
           .collection("tokens")
           .doc(userId)
-          .update({ [provider]: null });
+          .update({ [provider]: admin.firestore.FieldValue.delete() });
         // this will sign the user out.
         await admin
           .firestore()
           .collection("profiles")
           .doc(userId)
-          .update({ [provider]: null });
+          .update({ [provider]: admin.firestore.FieldValue.delete() });
         return null;
       }
       throw err;
@@ -62,7 +81,9 @@ export async function getAccessToken(userId: string, provider: string) {
 export async function getAppAccessToken(provider: string) {
   switch (provider) {
     case "twitch":
-      return new ClientCredentials(TWITCH_OAUTH_CONFIG).getToken({ scope: [] });
+      return new ClientCredentials(TWITCH_OAUTH_CONFIG).getToken({
+        scopes: [],
+      });
   }
   return null;
 }

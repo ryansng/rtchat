@@ -15,24 +15,47 @@ class TwitchRaidEventModel extends MessageModel {
       : super(messageId: messageId, timestamp: timestamp);
 }
 
+class TwitchHostEventModel extends MessageModel {
+  final TwitchUserModel from;
+  final int viewers;
+
+  const TwitchHostEventModel(
+      {required DateTime timestamp,
+      required String messageId,
+      required this.from,
+      required this.viewers})
+      : super(messageId: messageId, timestamp: timestamp);
+}
+
 class TwitchFollowEventModel extends MessageModel {
-  final TwitchUserModel follower;
+  final List<TwitchUserModel> followers;
 
   const TwitchFollowEventModel({
-    required this.follower,
+    required this.followers,
     required String messageId,
     required DateTime timestamp,
   }) : super(messageId: messageId, timestamp: timestamp);
 
   static TwitchFollowEventModel fromDocumentData(
       String messageId, Map<String, dynamic> data) {
+    return TwitchFollowEventModel(followers: [
+      TwitchUserModel(
+          userId: data['event']['user_id'],
+          login: data['event']['user_login'],
+          displayName: data['event']['user_name'])
+    ],
+    messageId: messageId,
+    timestamp: data['timestamp'].toDate());
+  }
+
+  static TwitchFollowEventModel merged(List<MessageModel> models) {
     return TwitchFollowEventModel(
-        follower: TwitchUserModel(
-            userId: data['event']['user_id'],
-            login: data['event']['user_login'],
-            displayName: data['event']['user_name']),
-        messageId: messageId,
-        timestamp: data['timestamp'].toDate());
+        followers: models
+            .whereType<TwitchFollowEventModel>()
+            .expand((element) => element.followers)
+            .toList(),
+        messageId: models.first.messageId,
+        timestamp: models.last.timestamp);
   }
 }
 
@@ -40,7 +63,7 @@ class TwitchCheerEventModel extends MessageModel {
   final int bits;
   final bool isAnonymous;
   final String cheerMessage;
-  final String giverName;
+  final String? giverName;
 
   const TwitchCheerEventModel({
     required this.bits,
@@ -122,8 +145,8 @@ class TwitchPollEventModel extends MessageModel {
       final String id = entry['id'];
       final String title = entry['title'] ?? "Untitled";
       final int votes = entry['votes'] ?? 0;
-      final int bitVotes = entry['bit_votes'] ?? 0;
-      final int channelPointVotes = entry['channel_point_votes'] ?? 0;
+      final int bitVotes = entry['bits_votes'] ?? 0;
+      final int channelPointVotes = entry['channel_points_votes'] ?? 0;
 
       var poll = PollChoiceModel(
           id: id,

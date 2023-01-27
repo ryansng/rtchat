@@ -11,6 +11,15 @@
       "$provider": {
         ".indexOn": ".value"
       }
+    },
+    "assignments": {
+      "$provider": {
+        ".indexOn": ".value"
+      }
+    },
+    "sentinel": {
+      ".read": true,
+      ".write": false
     }
   }
 }

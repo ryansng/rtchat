@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:rtchat/components/chat_history/decorated_event.dart';
 import 'package:rtchat/components/chat_history/twitch/poll_indicator.dart';
 import 'package:rtchat/models/messages/twitch/event.dart';
@@ -30,13 +29,13 @@ class TwitchPollEventWidget extends StatelessWidget {
         Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: Text(model.pollTitle,
-                style: Theme.of(context).textTheme.subtitle2)),
+                style: Theme.of(context).textTheme.titleSmall)),
         // polls
         ...getPollsWidget(model),
         // some breakdowns
         Text(
             "channel point votes: ${model.totalChannelPointsVotes}. bit votes: ${model.totalBitVotes}",
-            style: Theme.of(context).textTheme.subtitle1)
+            style: Theme.of(context).textTheme.titleMedium)
       ]),
     );
   }

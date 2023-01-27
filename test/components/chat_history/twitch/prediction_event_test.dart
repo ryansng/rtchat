@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -117,13 +116,13 @@ void main() {
     expect(findProgressIndicator, findsNWidgets(2));
   });
 
-  testWidgets('cancelled prediction should be empty',
+  testWidgets('canceled prediction should be empty',
       (WidgetTester tester) async {
     final model = TwitchPredictionEventModel(
         timestamp: DateTime.now(),
         messageId: 'prediction1',
         title: 'Unresolved prediction',
-        status: 'cancelled',
+        status: 'canceled',
         endTime: DateTime.now(),
         outcomes: [
           TwitchPredictionOutcomeModel('outcome1', 1, 'pink', 'Yes'),

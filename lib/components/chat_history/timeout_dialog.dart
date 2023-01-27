@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 
 class TimeoutDialog extends StatefulWidget {
   final String title;
@@ -9,7 +8,7 @@ class TimeoutDialog extends StatefulWidget {
       : super(key: key);
 
   @override
-  _TimeoutDialogState createState() => _TimeoutDialogState();
+  State<TimeoutDialog> createState() => _TimeoutDialogState();
 }
 
 class _TimeoutDialogState extends State<TimeoutDialog> {

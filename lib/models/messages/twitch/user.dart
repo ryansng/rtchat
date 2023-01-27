@@ -1,4 +1,5 @@
 import 'package:flutter/painting.dart';
+import 'package:rtchat/models/channels.dart';
 
 const colors = [
   Color(0xFFFF0000),
@@ -39,6 +40,19 @@ class TwitchUserModel {
   const TwitchUserModel(
       {required this.userId, this.displayName, required this.login});
 
+  @override
+  String toString() => login;
+
+  @override
+  int get hashCode => login.hashCode;
+
+  @override
+  bool operator ==(other) =>
+      other is TwitchUserModel &&
+      other.userId == userId &&
+      other.displayName == displayName &&
+      other.login == login;
+
   bool get isBot => botList.contains(login.toLowerCase());
 
   String get display {
@@ -55,6 +69,21 @@ class TwitchUserModel {
     return colors[n % colors.length];
   }
 
-  String get profilePictureUrl =>
-      "https://us-central1-rtchat-47692.cloudfunctions.net/getProfilePicture?provider=twitch&channelId=$userId";
+  Uri get profilePictureUrl {
+    return Uri.parse(
+        "https://rtirl.com/pfp.png?provider=twitch&channelId=$userId");
+  }
+
+  Channel get asChannel => Channel("twitch", userId, displayName ?? login);
+
+  TwitchUserModel.fromJson(Map<String, dynamic> json)
+      : userId = json["userId"],
+        displayName = json["displayName"],
+        login = json["login"];
+
+  Map<String, dynamic> toJson() => {
+        "userId": userId,
+        "displayName": displayName,
+        "login": login,
+      };
 }

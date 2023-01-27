@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:rtchat/components/chat_history/decorated_event.dart';
 import 'package:rtchat/models/messages/twitch/hype_train_event.dart';
 
@@ -19,7 +18,7 @@ class TwitchHypeTrainEventWidget extends StatelessWidget {
               const TextSpan(text: "Hype Train level "),
               TextSpan(
                   text: model.level.toString(),
-                  style: Theme.of(context).textTheme.subtitle2),
+                  style: Theme.of(context).textTheme.titleSmall),
               model.isSuccessful
                   ? const TextSpan(text: " succeeded! ")
                   : const TextSpan(text: " was not successful. "),
@@ -31,7 +30,7 @@ class TwitchHypeTrainEventWidget extends StatelessWidget {
               const TextSpan(text: "Hype Train level "),
               TextSpan(
                   text: model.level.toString(),
-                  style: Theme.of(context).textTheme.subtitle2),
+                  style: Theme.of(context).textTheme.titleSmall),
               const TextSpan(text: " in progress! "),
               TextSpan(
                   text: "${(model.progress * 100) ~/ model.goal}% completed!"),

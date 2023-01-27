@@ -1,12 +1,10 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:rtchat/models/layout.dart';
 import 'package:rtchat/models/style.dart';
-import 'package:url_launcher/url_launcher.dart';
-
-const discordUrl = "https://discord.gg/UKHJMQs74u";
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:rtchat/urls.dart';
 
 Widget _iconWithText(IconData icon, String text) {
   return Column(children: [
@@ -20,7 +18,7 @@ class SettingsScreen extends StatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);
 
   @override
-  _SettingsScreenState createState() => _SettingsScreenState();
+  State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
@@ -30,50 +28,58 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Settings"),
+        title: Text(AppLocalizations.of(context)!.settings),
       ),
       body: Consumer<LayoutModel>(builder: (context, layoutModel, child) {
         return ListView(children: [
           ListTile(
-            title: const Text('Activity feed'),
-            subtitle: const Text("Customize your activity feed"),
+            title: Text(AppLocalizations.of(context)!.activityFeed),
+            subtitle: Text(AppLocalizations.of(context)!.activityFeedSubtitle),
             onTap: () {
               Navigator.pushNamed(context, "/settings/activity-feed");
             },
           ),
           ListTile(
-            title: const Text('Audio sources'),
-            subtitle: const Text("Add web sources for alert sounds"),
+            title: Text(AppLocalizations.of(context)!.audioSources),
+            subtitle: Text(AppLocalizations.of(context)!.audioSourcesSubtitle),
             onTap: () {
               Navigator.pushNamed(context, "/settings/audio-sources");
             },
           ),
           ListTile(
-            title: const Text('Quick links'),
-            subtitle: const Text("Add shortcuts to commonly-used tools"),
+            title: Text(AppLocalizations.of(context)!.quickLinks),
+            subtitle: Text(AppLocalizations.of(context)!.quickLinksSubtitle),
             onTap: () {
               Navigator.pushNamed(context, "/settings/quick-links");
             },
           ),
           ListTile(
-            title: const Text('Chat history'),
-            subtitle: const Text("Change the chat appearance"),
+            title: Text(AppLocalizations.of(context)!.chatHistory),
+            subtitle: Text(AppLocalizations.of(context)!.chatHistorySubtitle),
             onTap: () {
               Navigator.pushNamed(context, "/settings/chat-history");
             },
           ),
           ListTile(
-            title: const Text('Text to speech'),
-            subtitle: const Text("Change text to speech settings"),
+            title: Text(AppLocalizations.of(context)!.textToSpeech),
+            subtitle: Text(AppLocalizations.of(context)!.textToSpeechSubtitle),
             onTap: () {
               Navigator.pushNamed(context, "/settings/text-to-speech");
             },
           ),
           ListTile(
-            title: const Text('Event Configuration'),
-            subtitle: const Text("Configure twitch events"),
+            title: Text(AppLocalizations.of(context)!.events),
+            subtitle: Text(AppLocalizations.of(context)!.eventsSubtitle),
             onTap: () {
               Navigator.pushNamed(context, "/settings/events");
+            },
+          ),
+          ListTile(
+            title: Text(AppLocalizations.of(context)!.thirdPartyServices),
+            subtitle:
+                Text(AppLocalizations.of(context)!.thirdPartyServicesSubtitle),
+            onTap: () {
+              Navigator.pushNamed(context, "/settings/third-party");
             },
           ),
           const Divider(),
@@ -89,15 +95,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         )),
                     const SizedBox(height: 8),
                     ToggleButtons(
-                      constraints:
-                          const BoxConstraints(minWidth: 80, minHeight: 50),
+                      constraints: BoxConstraints(
+                          minWidth:
+                              (MediaQuery.of(context).size.width - 36) / 3),
                       borderRadius:
                           const BorderRadius.all(Radius.circular(10.0)),
-                      children: [
-                        _iconWithText(Icons.screen_rotation, "System"),
-                        _iconWithText(Icons.screen_lock_portrait, "Portrait"),
-                        _iconWithText(Icons.screen_lock_landscape, "Landscape"),
-                      ],
                       onPressed: (index) {
                         switch (index) {
                           case 0:
@@ -123,6 +125,55 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             PreferredOrientation.landscape,
                       ],
                       selectedColor: Theme.of(context).colorScheme.secondary,
+                      children: [
+                        _iconWithText(Icons.screen_rotation, "System"),
+                        _iconWithText(Icons.screen_lock_portrait, "Portrait"),
+                        _iconWithText(Icons.screen_lock_landscape, "Landscape"),
+                      ],
+                    ),
+                  ])),
+          const SizedBox(height: 8),
+          Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text("App theme",
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.secondary,
+                          fontWeight: FontWeight.bold,
+                        )),
+                    const SizedBox(height: 8),
+                    ToggleButtons(
+                      constraints: BoxConstraints(
+                          minWidth:
+                              (MediaQuery.of(context).size.width - 36) / 3),
+                      borderRadius:
+                          const BorderRadius.all(Radius.circular(10.0)),
+                      onPressed: (index) {
+                        switch (index) {
+                          case 0:
+                            layoutModel.themeMode = ThemeMode.system;
+                            break;
+                          case 1:
+                            layoutModel.themeMode = ThemeMode.light;
+                            break;
+                          case 2:
+                            layoutModel.themeMode = ThemeMode.dark;
+                            break;
+                        }
+                      },
+                      isSelected: [
+                        layoutModel.themeMode == ThemeMode.system,
+                        layoutModel.themeMode == ThemeMode.light,
+                        layoutModel.themeMode == ThemeMode.dark,
+                      ],
+                      selectedColor: Theme.of(context).colorScheme.secondary,
+                      children: [
+                        _iconWithText(Icons.auto_mode, "System"),
+                        _iconWithText(Icons.light_mode, "Light mode"),
+                        _iconWithText(Icons.dark_mode, "Dark mode"),
+                      ],
                     ),
                   ])),
           SwitchListTile.adaptive(
@@ -132,40 +183,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
               layoutModel.isStatsVisible = value;
             },
           ),
-          SwitchListTile.adaptive(
-            title: const Text('Disable interaction when layout locked'),
-            subtitle: const Text(
-                'Useful for rain streams to avoid triggering the screen'),
-            value: layoutModel.isInteractionLockable,
-            onChanged: (value) {
-              layoutModel.isInteractionLockable = value;
-            },
-          ),
           const Divider(),
-          // ListTile(
-          //   title: const Text('Settings backup and restore'),
-          //   subtitle: const Text('Upload your settings to the ~cloud~'),
-          //   onTap: () {
-          //     Navigator.pushNamed(context, "/settings/backup");
-          //   },
-          // ),
-          FutureBuilder(
-              future: canLaunch(discordUrl),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData || !(snapshot.data as bool)) {
-                  return Container();
-                }
-
-                return ListTile(
-                  title: const Text('RealtimeIRL Discord'),
-                  subtitle: const Text("Join the RealtimeIRL Discord!"),
-                  trailing: const Icon(Icons.launch),
-                  onTap: () => launch(discordUrl),
-                );
-              }),
+          ListTile(
+            title: const Text('RealtimeChat is open source!'),
+            subtitle: const Text("Find us on GitHub!"),
+            trailing: const Icon(Icons.terminal),
+            onTap: () =>
+                openUrl(Uri.parse("https://github.com/muxable/rtchat")),
+          ),
+          ListTile(
+            title: const Text('Muxable Discord'),
+            subtitle: const Text("Join the Muxable Discord!"),
+            trailing: const Icon(Icons.launch),
+            onTap: () => openUrl(Uri.parse("https://discord.gg/UKHJMQs74u")),
+          ),
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Text("Thanks to all the testers who sent bug reports!",
+            child: Text("Thanks to all the early testers who sent bug reports!",
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.secondary,
                   fontWeight: FontWeight.bold,
@@ -179,7 +213,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   width: 24, image: AssetImage('assets/providers/twitch.png')),
               title: Text("/$key"),
               trailing: const Icon(Icons.launch),
-              onTap: () => launch(url),
+              onTap: () => openUrl(Uri.parse(url)),
             );
           }).toList()),
           FutureBuilder(
@@ -192,26 +226,39 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 final appName = packageInfo.appName;
                 final version = packageInfo.version;
                 final buildNumber = packageInfo.buildNumber;
-                return ListTile(
-                    title: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [Text('$appName v$version ($buildNumber)')]),
-                    dense: true,
-                    onTap: () {
-                      setState(() {
-                        if (++_versionTapCount == 6) {
-                          _versionTapCount = 0;
-                          final model =
-                              Provider.of<StyleModel>(context, listen: false);
-                          model.isDiscoModeAvailable =
-                              !model.isDiscoModeAvailable;
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                              content: model.isDiscoModeAvailable
-                                  ? const Text("🕺 Disco mode enabled! :D")
-                                  : const Text("🕺 Disco mode disabled D:")));
-                        }
-                      });
-                    });
+                return AboutListTile(
+                  icon: const Icon(Icons.info),
+                  applicationName: appName,
+                  applicationVersion: 'Version $version ($buildNumber)',
+                  applicationLegalese: '\u{a9} 2023 Muxable',
+                  dense: true,
+                  aboutBoxChildren: [
+                    const SizedBox(height: 24),
+                    InkWell(
+                        child: const Text(
+                          'Seems legit',
+                          textAlign: TextAlign.center,
+                        ),
+                        onTap: () {
+                          setState(() {
+                            if (++_versionTapCount == 6) {
+                              _versionTapCount = 0;
+                              final model = Provider.of<StyleModel>(context,
+                                  listen: false);
+                              model.isDiscoModeAvailable =
+                                  !model.isDiscoModeAvailable;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                      content: model.isDiscoModeAvailable
+                                          ? const Text(
+                                              "🕺 Disco mode enabled! :D")
+                                          : const Text(
+                                              "🕺 Disco mode disabled D:")));
+                            }
+                          });
+                        })
+                  ],
+                );
               })
         ]);
       }),

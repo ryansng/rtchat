@@ -1,21 +1,31 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
+import 'package:rtchat/components/chat_history/ad.dart';
+import 'package:rtchat/components/chat_history/auxiliary/realtimecash_donation.dart';
+import 'package:rtchat/components/chat_history/auxiliary/streamlabs.dart';
+import 'package:rtchat/components/chat_history/chat_cleared_event.dart';
+import 'package:rtchat/components/chat_history/decorated_event.dart';
 import 'package:rtchat/components/chat_history/stream_state_event.dart';
 import 'package:rtchat/components/chat_history/timeout_dialog.dart';
 import 'package:rtchat/components/chat_history/twitch/channel_point_event.dart';
 import 'package:rtchat/components/chat_history/twitch/cheer_event.dart';
 import 'package:rtchat/components/chat_history/twitch/follow_event.dart';
+import 'package:rtchat/components/chat_history/twitch/host_event.dart';
 import 'package:rtchat/components/chat_history/twitch/hype_train_event.dart';
 import 'package:rtchat/components/chat_history/twitch/message.dart';
 import 'package:rtchat/components/chat_history/twitch/poll_event.dart';
 import 'package:rtchat/components/chat_history/twitch/prediction_event.dart';
 import 'package:rtchat/components/chat_history/twitch/raid_event.dart';
+import 'package:rtchat/components/chat_history/twitch/raiding_event.dart';
 import 'package:rtchat/components/chat_history/twitch/subscription_event.dart';
 import 'package:rtchat/models/adapters/actions.dart';
 import 'package:rtchat/models/channels.dart';
 import 'package:rtchat/models/layout.dart';
+import 'package:rtchat/models/messages/auxiliary/realtimecash.dart';
+import 'package:rtchat/models/messages/auxiliary/streamlabs.dart';
 import 'package:rtchat/models/messages/message.dart';
 import 'package:rtchat/models/messages/twitch/channel_point_redemption_event.dart';
 import 'package:rtchat/models/messages/twitch/event.dart';
@@ -23,120 +33,183 @@ import 'package:rtchat/models/messages/twitch/eventsub_configuration.dart';
 import 'package:rtchat/models/messages/twitch/hype_train_event.dart';
 import 'package:rtchat/models/messages/twitch/message.dart';
 import 'package:rtchat/models/messages/twitch/prediction_event.dart';
+import 'package:rtchat/models/messages/twitch/raiding_event.dart';
 import 'package:rtchat/models/messages/twitch/subscription_event.dart';
 import 'package:rtchat/models/messages/twitch/subscription_gift_event.dart';
 import 'package:rtchat/models/messages/twitch/subscription_message_event.dart';
+import 'package:rtchat/models/tts.dart';
 import 'package:rtchat/models/user.dart';
+import 'package:rtchat/urls.dart';
 
 class ChatHistoryMessage extends StatelessWidget {
   final MessageModel message;
+  final Channel channel;
 
-  const ChatHistoryMessage({Key? key, required this.message}) : super(key: key);
+  const ChatHistoryMessage(
+      {Key? key, required this.message, required this.channel})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final m = message;
     if (m is TwitchMessageModel) {
       return Consumer<LayoutModel>(builder: (context, layoutModel, child) {
-        final child = Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: TwitchMessageWidget(m),
-        );
-        if (layoutModel.isInteractionLockable && layoutModel.locked) {
+        final announcement = m.annotations.announcement;
+        final child = announcement != null
+            ? DecoratedEventWidget(
+                accentColor: announcement.color,
+                child: TwitchMessageWidget(m),
+              )
+            : Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: TwitchMessageWidget(m),
+              );
+        if (layoutModel.locked) {
           return child;
         }
         final userModel = Provider.of<UserModel>(context, listen: false);
-        final loginChannel = userModel.userChannel!.channelId;
-        final viewingChannel = m.channelId.split(':')[1];
+        final loginChannelId = userModel.userChannel?.channelId;
+        final viewingChannelId = m.channelId.split(':')[1];
+        final channel = Channel("twitch", viewingChannelId, "");
 
-        if (loginChannel != viewingChannel) {
+        if (loginChannelId != viewingChannelId) {
           return child;
         }
 
-        return InkWell(
-            onLongPress: () async {
-              var showTimeoutDialog = await showDialog<bool>(
-                  context: context,
-                  builder: (context) {
-                    return Dialog(
-                      child: ListView(shrinkWrap: true, children: [
-                        ListTile(
-                            leading: const Icon(Icons.delete,
-                                color: Colors.redAccent),
-                            title: const Text('Delete Message'),
-                            onTap: () {
-                              final channelsModel = Provider.of<ChannelsModel>(
-                                  context,
-                                  listen: false);
-                              ActionsAdapter.instance.delete(
-                                  channelsModel.subscribedChannels.first,
-                                  m.messageId);
-                              Navigator.pop(context);
-                            }),
-                        ListTile(
-                            leading: const Icon(Icons.timer_outlined,
-                                color: Colors.orangeAccent),
-                            title: Text('Timeout ${m.author.displayName}'),
-                            onTap: () {
-                              Navigator.pop(context, true);
-                            }),
-                        ListTile(
-                            leading: const Icon(Icons.dnd_forwardslash_outlined,
-                                color: Colors.redAccent),
-                            title: Text('Ban ${m.author.displayName}'),
-                            onTap: () {
-                              final channelsModel = Provider.of<ChannelsModel>(
-                                  context,
-                                  listen: false);
-                              ActionsAdapter.instance.ban(
-                                  channelsModel.subscribedChannels.first,
-                                  m.author.login,
-                                  "banned by streamer");
-                              Navigator.pop(context);
-                            }),
-                        ListTile(
-                            leading: const Icon(Icons.circle_outlined,
-                                color: Colors.greenAccent),
-                            title: Text('Unban ${m.author.displayName}'),
-                            onTap: () {
-                              final channelsModel = Provider.of<ChannelsModel>(
-                                  context,
-                                  listen: false);
-                              ActionsAdapter.instance.unban(
-                                  channelsModel.subscribedChannels.first,
-                                  m.author.login);
-                              Navigator.pop(context);
-                            }),
-                      ]),
-                    );
-                  });
-              if (showTimeoutDialog == true) {
-                await showDialog(
+        return Material(
+          child: InkWell(
+              onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+              onLongPress: () async {
+                FocusManager.instance.primaryFocus?.unfocus();
+                var showTimeoutDialog = await showDialog<bool>(
                     context: context,
                     builder: (context) {
-                      return TimeoutDialog(
-                          title: "Timeout ${m.author.displayName}",
-                          onPressed: (duration) {
-                            final channelsModel = Provider.of<ChannelsModel>(
-                                context,
-                                listen: false);
-                            ActionsAdapter.instance.timeout(
-                                channelsModel.subscribedChannels.first,
-                                m.author.login,
-                                "timed out by streamer",
-                                duration);
-                            Navigator.pop(context);
-                          });
+                      return Dialog(
+                        child: ListView(
+                            shrinkWrap: true,
+                            primary: false,
+                            children: [
+                              if (kDebugMode) Text("DEBUG: id=${m.messageId}"),
+                              Consumer<TtsModel>(
+                                  builder: (context, ttsModel, child) {
+                                if (ttsModel.isMuted(m.author)) {
+                                  return ListTile(
+                                      leading: const Icon(
+                                          Icons.volume_up_rounded,
+                                          color: Colors.deepPurpleAccent),
+                                      title: Text(AppLocalizations.of(context)!
+                                          .unmuteUser(m.author.displayName ??
+                                              m.author.login)),
+                                      onTap: () {
+                                        ttsModel.unmute(m.author);
+                                        Navigator.pop(context);
+                                      });
+                                }
+                                return ListTile(
+                                    leading: const Icon(
+                                        Icons.volume_off_rounded,
+                                        color: Colors.redAccent),
+                                    title: Text(AppLocalizations.of(context)!
+                                        .muteUser(m.author.displayName ??
+                                            m.author.login)),
+                                    onTap: () {
+                                      ttsModel.mute(m.author);
+                                      Navigator.pop(context);
+                                    });
+                              }),
+                              ListTile(
+                                  leading: const Icon(Icons.delete,
+                                      color: Colors.redAccent),
+                                  title: Text(AppLocalizations.of(context)!
+                                      .deleteMessage),
+                                  onTap: () {
+                                    ActionsAdapter.instance
+                                        .delete(channel, m.messageId);
+                                    Navigator.pop(context);
+                                  }),
+                              ListTile(
+                                  leading: const Icon(Icons.timer_outlined,
+                                      color: Colors.orangeAccent),
+                                  title: Text(AppLocalizations.of(context)!
+                                      .timeoutUser(m.author.displayName ??
+                                          m.author.login)),
+                                  onTap: () {
+                                    Navigator.pop(context, true);
+                                  }),
+                              ListTile(
+                                  leading: const Icon(
+                                      Icons.dnd_forwardslash_outlined,
+                                      color: Colors.redAccent),
+                                  title: Text(AppLocalizations.of(context)!
+                                      .banUser(m.author.displayName ??
+                                          m.author.login)),
+                                  onTap: () {
+                                    ActionsAdapter.instance
+                                        .ban(channel, m.author.login);
+                                    Navigator.pop(context);
+                                  }),
+                              ListTile(
+                                  leading: const Icon(Icons.circle_outlined,
+                                      color: Colors.greenAccent),
+                                  title: Text(AppLocalizations.of(context)!
+                                      .unbanUser(m.author.displayName ??
+                                          m.author.login)),
+                                  onTap: () {
+                                    ActionsAdapter.instance
+                                        .unban(channel, m.author.login);
+                                    Navigator.pop(context);
+                                  }),
+                              ListTile(
+                                  leading: const Icon(Icons.copy_outlined,
+                                      color: Colors.greenAccent),
+                                  title: Text(AppLocalizations.of(context)!
+                                      .copyMessage),
+                                  onTap: () {
+                                    Clipboard.setData(
+                                        ClipboardData(text: m.message));
+                                    Navigator.pop(context);
+                                  }),
+                              ListTile(
+                                  leading: const Icon(Icons.link_outlined,
+                                      color: Colors.blueAccent),
+                                  title: Text(AppLocalizations.of(context)!
+                                      .viewProfile(m.author.displayName ??
+                                          m.author.login)),
+                                  onTap: () {
+                                    openUrl(Uri.parse(
+                                        "https://www.twitch.tv/${m.author.displayName}"));
+                                    Navigator.pop(context);
+                                  }),
+                            ]),
+                      );
                     });
-              }
-            },
-            child: child);
+                if (showTimeoutDialog == true) {
+                  await showDialog(
+                      context: context,
+                      builder: (context) {
+                        return TimeoutDialog(
+                            title: AppLocalizations.of(context)!.timeoutUser(
+                                m.author.displayName ?? m.author.login),
+                            onPressed: (duration) {
+                              ActionsAdapter.instance.timeout(
+                                  channel,
+                                  m.author.login,
+                                  "timed out by streamer",
+                                  duration);
+                              Navigator.pop(context);
+                            });
+                      });
+                }
+              },
+              child: child),
+        );
       });
     } else if (m is TwitchRaidEventModel) {
       return Selector<EventSubConfigurationModel, RaidEventConfig>(
         selector: (_, model) => model.raidEventConfig,
-        builder: (_, config, __) =>
-            config.showEvent ? TwitchRaidEventWidget(m) : Container(),
+        builder: (_, config, __) => config.showEvent
+            ? TwitchRaidEventWidget(m, channel: channel)
+            : Container(),
       );
     } else if (m is TwitchSubscriptionEventModel) {
       return Selector<EventSubConfigurationModel, SubscriptionEventConfig>(
@@ -200,8 +273,28 @@ class ChatHistoryMessage extends StatelessWidget {
         builder: (_, config, __) =>
             config.showEvent ? TwitchPredictionEventWidget(m) : Container(),
       );
+    } else if (m is TwitchHostEventModel) {
+      return Selector<EventSubConfigurationModel, HostEventConfig>(
+        selector: (_, model) => model.hostEventConfig,
+        builder: (_, config, __) =>
+            config.showEvent ? TwitchHostEventWidget(m) : Container(),
+      );
+    } else if (m is TwitchRaidingEventModel) {
+      return Selector<EventSubConfigurationModel, RaidingEventConfig>(
+        selector: (_, model) => model.raidingEventConfig,
+        builder: (_, config, __) =>
+            config.showEvent ? TwitchRaidingEventWidget(m) : Container(),
+      );
+    } else if (m is ChatClearedEventModel) {
+      return ChatClearedEventWidget(m);
+    } else if (m is AdMessageModel) {
+      return AdMessageWidget(m);
+    } else if (m is StreamlabsDonationEventModel) {
+      return StreamlabsDonationEventWidget(m);
+    } else if (m is SimpleRealtimeCashDonationEventModel) {
+      return RealtimeCashDonationEventWidget(m);
     } else {
-      throw AssertionError("invalid message type");
+      throw AssertionError("invalid message type $m");
     }
   }
 }

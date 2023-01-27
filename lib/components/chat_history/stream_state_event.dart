@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
-import 'package:intl/intl.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:rtchat/models/messages/message.dart';
 
 class StreamStateEventWidget extends StatelessWidget {
@@ -10,21 +9,22 @@ class StreamStateEventWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final date = DateFormat.yMMMMEEEEd().format(model.timestamp);
-    final time = DateFormat.jms().format(model.timestamp);
     return Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Container(
-            child: Padding(
-                padding: const EdgeInsets.all(8),
-                child: Text(
-                  model.isOnline
-                      ? "Stream online at $date, $time"
-                      : "Stream offline at $date, $time",
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.caption,
-                )),
-            color: Theme.of(context).dividerColor,
-            width: double.infinity));
+          color: Theme.of(context).dividerColor,
+          width: double.infinity,
+          child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: Text(
+                model.isOnline
+                    ? AppLocalizations.of(context)!
+                        .streamOnline(model.timestamp, model.timestamp)
+                    : AppLocalizations.of(context)!
+                        .streamOffline(model.timestamp, model.timestamp),
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodySmall,
+              )),
+        ));
   }
 }

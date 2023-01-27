@@ -4,27 +4,28 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class QuickLinkSource {
-  final String? name;
   final String icon;
   final Uri url;
+  final String label;
 
-  QuickLinkSource(this.name, this.icon, this.url);
+  QuickLinkSource(this.icon, this.url, this.label);
 
   @override
-  bool operator ==(other) => other is QuickLinkSource && other.url == url;
+  bool operator ==(other) =>
+      other is QuickLinkSource && other.url == url && other.label == label;
 
   @override
   int get hashCode => url.hashCode;
 
   QuickLinkSource.fromJson(Map<String, dynamic> json)
-      : name = json['name'],
-        icon = json['icon'],
-        url = Uri.parse(json['url']);
+      : icon = json['icon'],
+        url = Uri.parse(json['url']),
+        label = json['label'] ?? json['url']; // null coalescing for migration.
 
   Map<String, dynamic> toJson() => {
-        "name": name,
         "url": url.toString(),
         "icon": icon,
+        "label": label,
       };
 
   @override

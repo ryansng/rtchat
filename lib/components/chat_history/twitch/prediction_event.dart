@@ -11,7 +11,7 @@ class TwitchPredictionEventWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return model.status != "cancelled"
+    return model.status != "canceled"
         ? DecoratedEventWidget(
             child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -19,7 +19,7 @@ class TwitchPredictionEventWidget extends StatelessWidget {
               Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: Text(model.title,
-                      style: Theme.of(context).textTheme.subtitle2)),
+                      style: Theme.of(context).textTheme.titleSmall)),
               ...model.outcomes.map((outcome) {
                 final isWinner = model.status == "resolved" &&
                     model.winningOutcomeId == outcome.id;
@@ -57,7 +57,9 @@ class _TwitchOutcomeWidget extends StatelessWidget {
             child: LinearProgressIndicator(
               value: outcome.points / max(1, totalPoints),
               valueColor: AlwaysStoppedAnimation<Color>(outcome.widgetColor),
-              backgroundColor: outcome.widgetColor.shade200,
+              backgroundColor: Theme.of(context).brightness == Brightness.light
+                  ? outcome.widgetColor.shade200
+                  : outcome.widgetColor.shade900,
             ),
           ),
           Builder(builder: (context) {
@@ -66,26 +68,26 @@ class _TwitchOutcomeWidget extends StatelessWidget {
                 const Padding(
                   padding: EdgeInsets.only(left: 8),
                   child: Align(
+                    alignment: Alignment.centerLeft,
                     child: Icon(
                       Icons.emoji_events_outlined,
                     ),
-                    alignment: Alignment.centerLeft,
                   ),
                 ),
                 Padding(
                   padding: const EdgeInsets.only(left: 48),
                   child: Align(
+                    alignment: Alignment.centerLeft,
                     child: Text(
                       outcome.title,
                     ),
-                    alignment: Alignment.centerLeft,
                   ),
                 ),
                 Padding(
                   padding: const EdgeInsets.only(right: 12),
                   child: Align(
-                      child: Text(outcomePercentage),
-                      alignment: Alignment.centerRight),
+                      alignment: Alignment.centerRight,
+                      child: Text(outcomePercentage)),
                 )
               ]);
             } else {
@@ -93,15 +95,15 @@ class _TwitchOutcomeWidget extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.only(left: 12),
                   child: Align(
-                    child: Text(outcome.title),
                     alignment: Alignment.centerLeft,
+                    child: Text(outcome.title),
                   ),
                 ),
                 Padding(
                   padding: const EdgeInsets.only(right: 12),
                   child: Align(
-                      child: Text(outcomePercentage),
-                      alignment: Alignment.centerRight),
+                      alignment: Alignment.centerRight,
+                      child: Text(outcomePercentage)),
                 )
               ]);
             }
